@@ -1,4 +1,4 @@
-# TicTacToe Project (JetBrains Academy)
+# Project 1 - TicTacToe Project
 
 This is a small **Kotlin** project to get started in programming again. Feel free to use the code for inspiration. 
 
@@ -17,3 +17,5 @@ Enter coordinates: 1 1
 | **row1** |  1 1  |  1 2  | 1 3
 | **row2** |  2 1  |  2 2  | 2 3
 | **row3** |  3 1  |  3 2  | 3 3
+
+# Project 2 - Zookeeper
