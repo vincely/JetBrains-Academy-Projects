@@ -1,9 +1,18 @@
 package connectfour
 
-lateinit var player1: String
-lateinit var player2: String
+// CONSTANTS
 const val DEFAULT_ROWS = 6
 const val DEFAULT_COLS = 7
+const val VERTICAL = "║"
+const val L_CORNER = "╚"
+const val R_CORNER = "╝"
+const val CONNECT = "╩"
+const val BOTTOM = "═"
+
+// Variables
+lateinit var player1: String
+lateinit var player2: String
+
 lateinit var board: MutableList<MutableList<String>>
 
 fun main() {
@@ -11,6 +20,7 @@ fun main() {
     getPlayersName()
     initBoard()
     printGameConfig()
+    drawBoard(board)
 }
 
 fun printTitle() = println("Connect Four")
@@ -28,12 +38,12 @@ fun initBoard() {
     val userInput = readln().replace("""\s""".toRegex(), "")
     // checks if default dimension is wanted
     if (userInput == "") {
-        board = MutableList(DEFAULT_ROWS) { MutableList(DEFAULT_COLS) {""} }
+        board = MutableList(DEFAULT_ROWS) { MutableList(DEFAULT_COLS) {" "} }
         // Otherwise, check the input
     } else if (checkDimensions(userInput)) board =
-        MutableList(userInput.first().digitToInt()) { MutableList(userInput.last().digitToInt()) {""} }
-        // If check fails, call initBoard() again
-        else initBoard()
+        MutableList(userInput[0].digitToInt()) { MutableList(userInput[2].digitToInt()) {" "} }
+    // If check fails, call initBoard() again
+    else initBoard()
 }
 
 fun printGameConfig() {
@@ -65,4 +75,31 @@ fun checkDimensions(input: String): Boolean {
     }
     // if everything is okay, the fun will return true
     return true
+}
+
+fun drawBoard(board : MutableList<MutableList<String>>) {
+    val sb = StringBuilder()
+
+    // Column Numbers
+    sb.append(" ")
+    for (i in 1..board.first().size) {
+        sb.append("$i ")
+    }
+    sb.appendLine()
+
+    // Middle Part of Board
+    for (i in board.indices) {
+        sb.append("$VERTICAL")
+        for (j in board[i].indices) {
+            sb.append("${board[i][j]}$VERTICAL")
+        }
+        sb.appendLine()
+    }
+
+    // Bottom of Board
+    sb.append(L_CORNER)
+    for (i in board.first().indices) {
+        if (i < board.first().lastIndex) sb.append("$BOTTOM$CONNECT") else sb.append("$BOTTOM$R_CORNER").appendLine()
+    }
+    println(sb.toString())
 }
