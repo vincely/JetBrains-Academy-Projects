@@ -1,5 +1,7 @@
 package connectfour
 
+import java.util.*
+
 // CONSTANTS
 const val DEFAULT_ROWS = 6
 const val DEFAULT_COLS = 7
@@ -8,29 +10,66 @@ const val L_CORNER = "╚"
 const val R_CORNER = "╝"
 const val CONNECT = "╩"
 const val BOTTOM = "═"
+const val PLAYER1TOKEN = "o"
+const val PLAYER2TOKEN = "*"
+// Phrases
+const val INCORRECT_COLUMN = "Incorrect column number"
 
 // Variables
-lateinit var player1: String
-lateinit var player2: String
-
 lateinit var board: MutableList<MutableList<String>>
+var runningGame = false
+
+//Data Classes
+data class Player(val name: String, val token: String)
 
 fun main() {
     printTitle()
-    getPlayersName()
+    println("First player's name:")
+    val player1 = Player(readln(), PLAYER1TOKEN)
+    println("Second player's name:")
+    val player2 = Player(readln(), PLAYER2TOKEN)
     initBoard()
-    printGameConfig()
+    println("${player1.name} VS ${player2.name}")
+    println("${board.size} X ${board.first().size} board")
     drawBoard(board)
+    play(player1, player2)
+}
+
+
+fun play(player1: Player, player2: Player) {
+    runningGame = true
+    val playerList = mutableListOf(player1, player2)
+    while (runningGame) {
+        println("${playerList.first().name}'s turn:")
+        val input = readln()
+        when {
+            input == "end" -> {
+                println("Game over!")
+                runningGame = false
+            }
+            input.toIntOrNull() == null -> println(INCORRECT_COLUMN)
+            input.toInt() !in 1..board.first().size -> println("The column number is out of range (1 - ${board.first().size})")
+            else -> {
+                if (setToken(input.toInt() - 1, playerList.first())) Collections.swap(playerList, 0, 1) else println("Column $input is full")
+            }
+        }
+    }
+}
+
+fun setToken(col: Int, player: Player): Boolean {
+    for (i in board.lastIndex downTo 0) {
+        //println("$i. row in loop")
+        if (board[i][col] == " ") {
+            board[i][col] = player.token
+            //println("Token set...")
+            drawBoard(board)
+            return true
+        }
+    }
+    return false
 }
 
 fun printTitle() = println("Connect Four")
-
-fun getPlayersName() {
-    println("First player's name:")
-    player1 = readln()
-    println("Second player's name:")
-    player2 = readln()
-}
 
 fun initBoard() {
     println("Set the board dimensions (Rows x Columns)")
@@ -44,11 +83,6 @@ fun initBoard() {
         MutableList(userInput[0].digitToInt()) { MutableList(userInput[2].digitToInt()) {" "} }
     // If check fails, call initBoard() again
     else initBoard()
-}
-
-fun printGameConfig() {
-    println("$player1 VS $player2")
-    println("${board.size} X ${board.first().size} board")
 }
 
 fun checkDimensions(input: String): Boolean {
@@ -89,7 +123,7 @@ fun drawBoard(board : MutableList<MutableList<String>>) {
 
     // Middle Part of Board
     for (i in board.indices) {
-        sb.append("$VERTICAL")
+        sb.append(VERTICAL)
         for (j in board[i].indices) {
             sb.append("${board[i][j]}$VERTICAL")
         }
