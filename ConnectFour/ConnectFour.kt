@@ -35,6 +35,52 @@ fun main() {
     play(player1, player2)
 }
 
+fun checkWin(player: Player): Boolean {
+    for (row in board.indices) {
+        for (col in board[row].indices) {
+            // Check for Vertical Wins
+            if (board.getOrNull(row + 3) != null) {
+                if (board[row][col] == player.token
+                    && board[row + 1][col] == player.token
+                    && board[row + 2][col] == player.token
+                    && board[row + 3][col] == player.token
+                ) return true
+            }
+            // Check for horizontal wins
+            if (board[row].getOrNull(col + 3) != null) {
+                if (board[row][col] == player.token
+                    && board[row][col + 1] == player.token
+                    && board[row][col + 2] == player.token
+                    && board[row][col + 3] == player.token
+                ) return true
+            }
+            // Check for diagonal bottom right
+            if (board[row].getOrNull(col + 3) != null && board.getOrNull(row + 3) != null) {
+                //println("Inside diagonal if")
+                if (board[row][col] == player.token
+                    && board[row + 1][col + 1] == player.token
+                    && board[row + 2][col + 2] == player.token
+                    && board[row + 3][col + 3] == player.token
+                ) return true
+            }
+            // Check for diagonal upper right
+            if (board[row].getOrNull(col - 3) != null && board.getOrNull(row + 3) != null) {
+                //println("Inside diagonal if")
+                if (board[row][col] == player.token
+                    && board[row + 1][col - 1] == player.token
+                    && board[row + 2][col - 2] == player.token
+                    && board[row + 3][col - 3] == player.token
+                ) return true
+            }
+        }
+    }
+    return false
+}
+
+fun endGame() {
+    runningGame = false
+    println("Game over!")
+}
 
 fun play(player1: Player, player2: Player) {
     runningGame = true
@@ -44,13 +90,24 @@ fun play(player1: Player, player2: Player) {
         val input = readln()
         when {
             input == "end" -> {
-                println("Game over!")
-                runningGame = false
+                endGame()
             }
             input.toIntOrNull() == null -> println(INCORRECT_COLUMN)
             input.toInt() !in 1..board.first().size -> println("The column number is out of range (1 - ${board.first().size})")
             else -> {
-                if (setToken(input.toInt() - 1, playerList.first())) Collections.swap(playerList, 0, 1) else println("Column $input is full")
+                if (setToken(input.toInt() - 1, playerList.first())) {
+                    if (checkWin(playerList.first())) {
+                        println("Player ${playerList.first().name} won")
+                        endGame()
+                        return
+                    }
+                    if (board.none { it.contains(" ") }) {
+                        println("It is a draw")
+                        endGame()
+                        return
+                    }
+                    Collections.swap(playerList, 0, 1)
+                } else println("Column $input is full")
             }
         }
     }
@@ -58,10 +115,8 @@ fun play(player1: Player, player2: Player) {
 
 fun setToken(col: Int, player: Player): Boolean {
     for (i in board.lastIndex downTo 0) {
-        //println("$i. row in loop")
         if (board[i][col] == " ") {
             board[i][col] = player.token
-            //println("Token set...")
             drawBoard(board)
             return true
         }
