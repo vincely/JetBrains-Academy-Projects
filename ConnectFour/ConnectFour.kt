@@ -3,23 +3,23 @@ package connectfour
 import java.util.*
 
 fun main() {
-    TicTacToe.printTitle()
+    ConnectFour.printTitle()
     // get all the configurations for the game
     // name of players, board dimensions and number of rounds to play
-    val config = TicTacToe.getGameConfig()
-    val player1 = TicTacToe.Player(config["player1"]!!, TicTacToe.PLAYER1TOKEN)
-    val player2 = TicTacToe.Player(config["player2"]!!, TicTacToe.PLAYER2TOKEN)
+    val config = ConnectFour.getGameConfig()
+    val player1 = ConnectFour.Player(config["player1"]!!, ConnectFour.PLAYER1TOKEN)
+    val player2 = ConnectFour.Player(config["player2"]!!, ConnectFour.PLAYER2TOKEN)
 
     val dimensions: List<Int> = config["dimensions"]!!.split(" ").map { it.toInt() }
     val rounds = config["rounds"]!!.toInt()
-    val game = TicTacToe.Game(dimensions)
+    val game = ConnectFour.Game(dimensions)
     println("${player1.name} VS ${player2.name}")
     println("${game.board.size} X ${game.board.first().size} board")
     if (rounds == 1) println("Single game") else println("Total $rounds games")
     game.play(player1, player2, rounds)
 }
 
-class TicTacToe {
+class ConnectFour {
     companion object {
         // CONSTANTS
         const val DEFAULT_ROWS = 6
