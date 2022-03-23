@@ -1,4 +1,4 @@
-package chess
+import kotlin.math.abs
 
 fun main() {
     /*val pair = Pair('a', 2)
@@ -14,6 +14,7 @@ class Board {
     var pawnSet = PawnSet()
     val deadPawnSet: MutableList<MutableList<Pawn>> = MutableList(2) { mutableListOf() }
     val xCordsMap = hashMapOf('a' to 0, 'b' to 1, 'c' to 2, 'd' to 3, 'e' to 4, 'f' to 5, 'g' to 6, 'h' to 7)
+    val moveList = mutableListOf<Move>()
 
     init {
         initBoard()
@@ -83,21 +84,37 @@ class Board {
         // println("Possible moves are: $possibleMoves") //Zum checken, ob die Vorhersage der Züge funzt
         if (possibleMoves != null) {
             if (Pair(move.end.x, move.end.y) in possibleMoves) {
-                if (move.player.isWhite && move.end.pawn != null) {
-                    deadPawnSet[0].add(move.end.pawn!!)
-                } else if (!move.player.isWhite && move.end.pawn != null){
-                    deadPawnSet[1].add(move.end.pawn!!)
-                }
+                // addPawnToDeadList(move.end.pawn, move.player.isWhite) //is not quite correct, will fix later
                 move.end.pawn = move.start.pawn
                 move.start.pawn = null
+                if (moveList.size > 0) {
+                    val lastMove = moveList.last()
+                    if (!lastMove.player.isWhite && lastMove.enPassantMe && move.end.y == lastMove.end.y + 1) {
+                        getSpot(move.end.x, move.end.y - 1)?.pawn = null
+                    }
+                    if (lastMove.player.isWhite && lastMove.enPassantMe && move.end.y == lastMove.end.y - 1) {
+                        getSpot(move.end.x, move.end.y + 1)?.pawn = null
+                    }
+                }
+                moveList.add(move)
+
                 return true
             }
         }
+
+
 
         println("Invalid Input")
         return false
     }
 
+    fun addPawnToDeadList(pawn: Pawn?, isWhite: Boolean) {
+        if (isWhite && pawn != null) {
+            deadPawnSet[0].add(pawn)
+        } else if (!isWhite && pawn != null) {
+            deadPawnSet[1].add(pawn)
+        }
+    }
     // looks good so far
     fun getSpot(x: Char, y: Int): Spot? {
         if (x !in 'a'..'h' || y !in 1..8) return null
@@ -126,6 +143,12 @@ class Board {
                 destList.add(Pair(startX, startY + 2))
             }
             if (oneUp?.pawn == null) destList.add(Pair(startX, startY + 1))
+            if (moveList.size > 0 && moveList.last().start == getSpot(startX - 1, startY + 2) && moveList.last().end == getSpot(startX - 1, startY)) { //doublejump from left top to the left side
+                destList.add(Pair(startX - 1, startY + 1))
+            }
+            if (moveList.size > 0 && moveList.last().start == getSpot(startX + 1, startY + 2) && moveList.last().end == getSpot(startX + 1, startY)) { //doublejump from right top to the right side
+                destList.add(Pair(startX + 1, startY + 1))
+            }
 
         } else if (!startSpot.pawn!!.isWhite) {
             if (botDiagL?.pawn != null && botDiagL.pawn!!.isWhite) destList.add(Pair(startX - 1, startY - 1))
@@ -134,6 +157,12 @@ class Board {
                 destList.add(Pair(startX, startY - 2))
             }
             if (oneDown?.pawn == null) destList.add(Pair(startX, startY - 1))
+            if (moveList.size > 0 && moveList.last().start == getSpot(startX - 1, startY - 2) && moveList.last().end == getSpot(startX - 1, startY)) { //doublejump from left bottom to the left side
+                destList.add(Pair(startX - 1, startY - 1))
+            }
+            if (moveList.size > 0 && moveList.last().start == getSpot(startX + 1, startY - 2) && moveList.last().end == getSpot(startX + 1, startY)) { //doublejump from right bottom to the right side
+                destList.add(Pair(startX + 1, startY - 1))
+            }
         }
         return destList
     }
@@ -169,7 +198,7 @@ class PawnSet {
     }
 }
 
-data class Move(val player: Player, val start: Spot, val end: Spot)
+data class Move(val player: Player, val start: Spot, val end: Spot, var enPassantMe: Boolean = false)
 
 data class Spot(
     var pawn: Pawn? = null,
@@ -257,7 +286,9 @@ class Game {
     fun playerMove (player: Player, startX: Char, startY: Int, destX: Char, destY: Int ): Move {
         val startSpot: Spot = board.getSpot(startX, startY)!!
         val destSpot: Spot = board.getSpot(destX, destY)!!
-        return Move(player, startSpot, destSpot)
+        val move = Move(player, startSpot, destSpot)
+        if (abs(move.start.y - move.end.y) == 2) move.enPassantMe = true
+        return move
     }
     fun printTitle() {
         println("Pawns-Only Chess")
