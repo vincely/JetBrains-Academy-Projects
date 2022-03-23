@@ -1,3 +1,5 @@
+package chess
+
 fun main() {
     /*val pair = Pair('a', 2)
     val list = mutableListOf(Pair('a', 2))
@@ -78,7 +80,7 @@ class Board {
         /*val pair = Pair(move.start.x, move.start.y)
         println("This is the pair: $pair")*/
         val possibleMoves = getPossibleDestinations(move!!.start)
-        println("Possible moves are: $possibleMoves") //Zum checken, ob die Vorhersage der Züge funzt
+        // println("Possible moves are: $possibleMoves") //Zum checken, ob die Vorhersage der Züge funzt
         if (possibleMoves != null) {
             if (Pair(move.end.x, move.end.y) in possibleMoves) {
                 if (move.player.isWhite && move.end.pawn != null) {
@@ -115,14 +117,22 @@ class Board {
         val botDiagR = getSpot(startX + 1 , startY - 1)
         val oneDown = getSpot(startX, startY - 1)
         val oneUp = getSpot(startX, startY + 1)
+        val twoDown = getSpot(startX, startY - 2)
+        val twoUp = getSpot(startX, startY + 2)
         if (startSpot.pawn!!.isWhite) {
             if (topDiagL?.pawn != null && !topDiagL.pawn!!.isWhite) destList.add(Pair(startX - 1, startY + 1))
             if (topDiagR?.pawn != null && !topDiagR.pawn!!.isWhite) destList.add(Pair(startX + 1, startY + 1))
+            if (startSpot.y == 2 && twoUp?.pawn == null && oneUp?.pawn == null) {
+                destList.add(Pair(startX, startY + 2))
+            }
             if (oneUp?.pawn == null) destList.add(Pair(startX, startY + 1))
 
         } else if (!startSpot.pawn!!.isWhite) {
             if (botDiagL?.pawn != null && botDiagL.pawn!!.isWhite) destList.add(Pair(startX - 1, startY - 1))
             if (botDiagR?.pawn != null && botDiagR.pawn!!.isWhite) destList.add(Pair(startX + 1, startY - 1))
+            if (startSpot.y == 7 && twoDown?.pawn == null && oneDown?.pawn == null) {
+                destList.add(Pair(startX, startY - 2))
+            }
             if (oneDown?.pawn == null) destList.add(Pair(startX, startY - 1))
         }
         return destList
