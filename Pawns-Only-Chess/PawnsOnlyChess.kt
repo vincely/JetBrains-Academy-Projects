@@ -1,9 +1,6 @@
 import kotlin.math.abs
 
 fun main() {
-    /*val pair = Pair('a', 2)
-    val list = mutableListOf(Pair('a', 2))
-    println("pair is in list: ${pair in list}")*/
     val game = Game()
     game.startGame()
 }
@@ -61,8 +58,6 @@ class Board {
 
 
     fun movePiece (move: Move): Boolean{
-        val tempDeadPawnList = mutableListOf<Pawn>()
-
         if (move.start.pawn != null) {
             if (move.player.isWhite != move.start.pawn!!.isWhite) {
                 when (move.player.isWhite) {
@@ -78,21 +73,22 @@ class Board {
             }
             return false
         }
-        /*val pair = Pair(move.start.x, move.start.y)
-        println("This is the pair: $pair")*/
         val possibleMoves = getPossibleDestinations(move!!.start)
-        // println("Possible moves are: $possibleMoves") //Zum checken, ob die Vorhersage der Züge funzt
         if (possibleMoves != null) {
             if (Pair(move.end.x, move.end.y) in possibleMoves) {
-                // addPawnToDeadList(move.end.pawn, move.player.isWhite) //is not quite correct, will fix later
+                if (move.end.getOccupied()) {
+                    addPawnToDeadList(move.end.pawn!!)
+                }
                 move.end.pawn = move.start.pawn
                 move.start.pawn = null
                 if (moveList.size > 0) {
                     val lastMove = moveList.last()
-                    if (!lastMove.player.isWhite && lastMove.enPassantMe && move.end.y == lastMove.end.y + 1) {
+                    if (!lastMove.player.isWhite && lastMove.enPassantMe && move.end.y == lastMove.end.y + 1 && move.end.x == lastMove.end.x) {
+                        addPawnToDeadList(lastMove.end.pawn!!)
                         getSpot(move.end.x, move.end.y - 1)?.pawn = null
                     }
-                    if (lastMove.player.isWhite && lastMove.enPassantMe && move.end.y == lastMove.end.y - 1) {
+                    if (lastMove.player.isWhite && lastMove.enPassantMe && move.end.y == lastMove.end.y - 1 && move.end.x == lastMove.end.x) {
+                        addPawnToDeadList(lastMove.end.pawn!!)
                         getSpot(move.end.x, move.end.y + 1)?.pawn = null
                     }
                 }
@@ -108,21 +104,24 @@ class Board {
         return false
     }
 
-    fun addPawnToDeadList(pawn: Pawn?, isWhite: Boolean) {
-        if (isWhite && pawn != null) {
+    fun addPawnToDeadList(pawn: Pawn) {
+        if (pawn.isWhite) {
             deadPawnSet[0].add(pawn)
-        } else if (!isWhite && pawn != null) {
+        } else {
             deadPawnSet[1].add(pawn)
         }
     }
-    // looks good so far
+
+    /**
+     * returns spot based on user coordinates
+     */
     fun getSpot(x: Char, y: Int): Spot? {
         if (x !in 'a'..'h' || y !in 1..8) return null
         val xCord = xCordsMap[x]!!
         val yCord = 8 - y
         return gameField[yCord][xCord]
     }
-    // works
+
     fun getPossibleDestinations(startSpot: Spot?): MutableList<Pair<Char, Int>>? {
         val destList: MutableList<Pair<Char, Int>> = mutableListOf()
         if (startSpot?.pawn == null) return null
@@ -193,9 +192,6 @@ class PawnSet {
             pawnList.add(innerList)
         }
     }
-    fun getPawnSet(): MutableList<MutableList<Pawn>> {
-        return pawnList
-    }
 }
 
 data class Move(val player: Player, val start: Spot, val end: Spot, var enPassantMe: Boolean = false)
@@ -226,10 +222,12 @@ data class Spot(
 
 class Player(val isWhite: Boolean, var name: String = "No name Set") {
 
+    fun getColorString(): String {
+        return if (isWhite) "White" else "Black"
+    }
 }
 
 class Game {
-    var isWhiteTurn = true
     val board = Board()
     val player1 = Player(isWhite = true)
     val player2 = Player(isWhite = false)
@@ -255,7 +253,72 @@ class Game {
                 playerTurn = if (playerTurn == player1) player2 else player1
                 board.drawBoard()
             }
+            // Checking for draw
+            if (checkForDraw() == 0) {
+                gameState = GameState.DRAW
+            }
+            // Check if anyone won
+            val winner = checkWin(move)
+            if (winner != null) {
+                if (winner.isWhite) {
+                    gameState = GameState.WHITE_WIN
+                } else {
+                    gameState = GameState.BLACK_WIN
+                }
+            }
         }
+        when (gameState) {
+            GameState.WHITE_WIN -> println("White Wins!")
+            GameState.BLACK_WIN -> println("Black Wins!")
+            GameState.DRAW -> println("Stalemate!")
+        }
+        exitGame()
+
+    }
+
+    fun checkForDraw(): Int {
+        var possibleMoves1 = 0
+        var possibleMoves2 = 0
+        for (row in board.gameField) {
+            for (col in row) {
+                if (col.pawn?.isWhite == true) {
+                    possibleMoves1 += board.getPossibleDestinations(col)?.size ?: continue
+                } else if (col.pawn?.isWhite == false) {
+                    possibleMoves2 += board.getPossibleDestinations(col)?.size ?: continue
+                }
+            }
+        }
+
+        return minOf(possibleMoves1, possibleMoves2)
+    }
+
+    fun exitGame() {
+        println("Bye!")
+        gameState = GameState.INACTIVE
+    }
+
+    fun checkWin(move: Move): Player? {
+        for (list in board.deadPawnSet) {
+            if (list.size == 8) {
+                return move.player
+            }
+        }
+
+        for ((index, row) in board.gameField.withIndex()) {
+            when(index) {
+                1, 2, 3, 4, 5, 6 -> continue
+            }
+            for (col in row.indices) {
+                if (index == 0 && row[col].getOccupied()) {
+                    return player1
+                } else if(index == 7 && row[col].getOccupied()) {
+                    return player2
+                }
+            }
+        }
+        return null
+
+
     }
 
     fun handleMoveInput(): Move? {
