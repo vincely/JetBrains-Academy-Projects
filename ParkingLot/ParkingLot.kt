@@ -1,5 +1,3 @@
-package parking
-
 fun main() {
     val parkMan = ParkManager()
     parkMan.start()
@@ -35,6 +33,33 @@ class ParkManager(var lotSize: Int = 0) {
             val custOrder = reception()
             val action = extractAction(custOrder)
             when (action) {
+                "reg_by_color" -> {
+                    if (lotSize == 0) {
+                        println("Sorry, a parking lot has not been created.")
+                        continue
+                    }
+                    val color = handleRegByColorQuery(custOrder)
+                    if (color.isEmpty()) continue
+                    printRegsByColor(color)
+                }
+                "spot_by_color" -> {
+                    if (lotSize == 0) {
+                        println("Sorry, a parking lot has not been created.")
+                        continue
+                    }
+                    val color = handleSpotByColor(custOrder)
+                    if (color.isEmpty()) continue
+                    printSpotByColor(color)
+                }
+                "spot_by_reg" -> {
+                    if (lotSize == 0) {
+                        println("Sorry, a parking lot has not been created.")
+                        continue
+                    }
+                    val reg = handleSpotByReg(custOrder)
+                    if (reg.isEmpty()) continue
+                    printSpotByReg(reg)
+                }
                 "create" -> {
                     val size = handleCreateInput(custOrder)
                     if (size < 0) continue
@@ -79,7 +104,7 @@ class ParkManager(var lotSize: Int = 0) {
 
     fun reception(): MutableList<String> {
         val input = readln()
-        val rex = """(.+\s+.+)||(exit)||(status)""".toRegex()
+        val rex = """(.+\s+.+)||(exit)||(status)||(reg_by_color)||(spot_by_color)||(spot_by_reg)""".toRegex()
         val order = mutableListOf<String>()
         if (input.matches(rex)) {
             order.addAll(input.split(" "))
@@ -90,7 +115,7 @@ class ParkManager(var lotSize: Int = 0) {
     fun extractAction(order: MutableList<String>): String {
         if (order.isEmpty()) return "empty"
         return when (order[0]) {
-            "park", "leave", "exit", "create", "status" -> order[0]
+            "park", "leave", "exit", "create", "status", "reg_by_color", "spot_by_color", "spot_by_reg" -> order[0]
             else -> "invalid"
         }
     }
@@ -103,7 +128,7 @@ class ParkManager(var lotSize: Int = 0) {
         if (lots.all { !it.value.getStatus() }) {
             println("Parking lot is empty.")
             return
-            }
+        }
 
         for (lot in lots) {
             if (lot.value.getStatus()) {
@@ -184,11 +209,64 @@ class ParkManager(var lotSize: Int = 0) {
         return 0
     }
 
+    fun handleRegByColorQuery(input: MutableList<String>): String {
+        if (input.size != 2) {
+            println("Invalid arguments")
+            return ""
+        }
+        return input[1]
+    }
+
+    fun printRegsByColor(color: String) {
+        val filtered = lots.filterValues { it.getCar()?.color == color.lowercase() }
+        if (filtered.isEmpty()) {
+            println("No cars with color $color were found.")
+        } else {
+            println(filtered.map { it.value.getCar()?.id }.joinToString(", "))
+        }
+    }
+
+    fun handleSpotByColor(input: MutableList<String>): String {
+        if (input.size != 2) {
+            println("Invalid arguments")
+            return ""
+        } else {
+            return input[1]
+        }
+    }
+
+    fun printSpotByColor(color: String) {
+        val filtered = lots.filterValues { it.getCar()?.color == color.lowercase() }
+        if (filtered.isEmpty()) {
+            println("No cars with color $color were found.")
+        } else {
+            println(filtered.map { it.key}.joinToString(", "))
+        }
+    }
+
+    fun handleSpotByReg(input: MutableList<String>): String {
+        if (input.size != 2) {
+            println("Invalid arguments")
+            return ""
+        } else {
+            return input[1]
+        }
+    }
+
+    fun printSpotByReg(reg: String) {
+        val filtered = lots.filterValues { it.getCar()?.id == reg }
+        if (filtered.isEmpty()) {
+            println("No cars with registration number $reg were found.")
+        } else {
+            println(filtered.map { it.key }.joinToString(", "))
+        }
+    }
+
 }
 
 data class Car(private val _id: String, private val _color: String) {
     val id: String = _id.replace("\\s".toRegex(), "")
-    val color: String = _color
+    val color: String = _color.lowercase()
 }
 
 class Lot {
